@@ -9,3 +9,4 @@ server/dist/
 !bridge.env.example
 .DS_Store
 coverage/
+SHA256SUMS.txt
