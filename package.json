@@ -1,10 +1,10 @@
 {
   "name": "paseo-architect-bridge",
-  "version": "0.3.1",
-  "description": "Read-only architectural context from Paseo for ChatGPT and MCP, on Linux and macOS.",
+  "version": "0.4.0",
+  "description": "Raw Paseo API tools for ChatGPT and MCP on Linux and macOS.",
   "main": "server/bridge.mjs",
   "scripts": {
-    "build": "node build.mjs && node scripts/notices.mjs",
+    "build": "node scripts/catalog.mjs && node build.mjs && node scripts/notices.mjs",
     "test": "node --test server/*.test.mjs cli/*.test.mjs",
     "probe": "node server/dist/bridge.mjs --probe",
     "prepack": "npm run build",
@@ -23,11 +23,13 @@
   "dependencies": {
     "@getpaseo/client": "0.10.3",
     "@modelcontextprotocol/sdk": "1.26.0",
+    "ajv": "8.20.0",
     "jose": "6.2.12",
     "zod": "4.6.5"
   },
   "devDependencies": {
-    "esbuild": "0.25.12"
+    "esbuild": "0.25.12",
+    "typescript": "5.9.3"
   },
   "engines": {
     "node": ">=22.13"

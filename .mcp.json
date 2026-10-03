@@ -12,7 +12,8 @@
         "PASEO_URL",
         "PASEO_PASSWORD",
         "PASEO_DB",
-        "PASEO_POLL_MS"
+        "PASEO_POLL_MS",
+        "PASEO_ACCESS"
       ]
     }
   }

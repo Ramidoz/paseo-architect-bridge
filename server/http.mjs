@@ -12,7 +12,8 @@ export function startHttp(makeServer,config=authConfig(),verify=tokenVerifier(co
    res.setHeader('Content-Type','application/json');res.end(JSON.stringify(protectedMetadata(config)));return;
   }
   if(path!=='/mcp'){res.writeHead(404).end();return;}
-  try{await verify(req.headers.authorization);}catch {
+  let identity;
+  try{identity=await verify(req.headers.authorization);}catch {
    res.setHeader('WWW-Authenticate',`Bearer resource_metadata="http://127.0.0.1:${config.port}/.well-known/oauth-protected-resource", scope="${config.scope}"`);
    res.writeHead(401,{'Content-Type':'application/json'}).end(JSON.stringify({error:'Unauthorized'}));return;
   }
@@ -22,7 +23,7 @@ export function startHttp(makeServer,config=authConfig(),verify=tokenVerifier(co
   try {
    for await(const chunk of req){body+=chunk;if(Buffer.byteLength(body)>1048576){res.writeHead(413).end();return;}}
    const parsed=JSON.parse(body);
-   const server=makeServer(),transport=new StreamableHTTPServerTransport({sessionIdGenerator:undefined,enableJsonResponse:true});
+   const server=makeServer({scopes:new Set(identity.scope.split(' '))}),transport=new StreamableHTTPServerTransport({sessionIdGenerator:undefined,enableJsonResponse:true});
    res.on('close',()=>void server.close());
    await server.connect(transport);await transport.handleRequest(req,res,parsed);
   }catch {

@@ -16,10 +16,10 @@ test('only the exact owner with a valid Paseo access token is accepted',async()=
  for(const header of [undefined,'','Basic secret','Bearer a b','Bearer garbage'])await assert.rejects(verify(header));
 });
 test('HTTP endpoints never instantiate MCP or expose project data before authorization',async()=>{
- let calls=0;const listener=startHttp(()=>{calls++;throw Error('must not reach MCP');},config);
+ let calls=0;const listener=startHttp(()=>{calls++;throw Error('must not reach MCP');},{...config,port:0});
  await new Promise(resolve=>listener.once('listening',resolve));
  try {
-  const base=`http://127.0.0.1:${config.port}`;
+  const base=`http://127.0.0.1:${listener.address().port}`;
   for(const method of ['POST','GET','DELETE'])assert.equal((await fetch(base+'/mcp',{method})).status,401);
   assert.equal((await fetch(base+'/mcp',{method:'POST',headers:{Authorization:'Bearer invalid'}})).status,401);
   assert.equal((await fetch(base+'/mcp',{headers:{Origin:'https://attacker.example'}})).status,403);
@@ -32,19 +32,24 @@ test('missing identity configuration and insecure issuers fail closed',()=>{
  assert.throws(()=>authConfig({PASEO_OAUTH_ISSUER:'http://tenant.example/',PASEO_OAUTH_RESOURCE:config.resource,PASEO_OAUTH_SUBJECT:config.subject}));
 });
 test('authenticated stateless MCP initializes, discovers and calls tools; a different owner is rejected',async()=>{
- const listener=startHttp(()=>{
+ let controls=0;
+ const listener=startHttp(({scopes})=>{
   const server=new McpServer({name:'fixture',version:'1.0.0'});
   server.registerTool('fixture_read',{description:'Synthetic read',annotations:{readOnlyHint:true},inputSchema:{}},async()=>({content:[{type:'text',text:'synthetic result'}]}));
+  server.registerTool('fixture_control',{description:'Synthetic control',annotations:{readOnlyHint:false},inputSchema:{}},async()=>{if(!scopes.has('paseo:control'))throw Error('Control scope required');controls++;return {content:[{type:'text',text:'accepted'}]};});
   return server;
- },config,verify);
+ },{...config,port:0},verify);
  await new Promise(resolve=>listener.once('listening',resolve));
- const base=`http://127.0.0.1:${config.port}/mcp`;
+ const base=`http://127.0.0.1:${listener.address().port}/mcp`;
  const headers={'Content-Type':'application/json',Accept:'application/json, text/event-stream',Authorization:'Bearer '+await sign()};
  async function rpc(id,method,params){const response=await fetch(base,{method:'POST',headers,body:JSON.stringify({jsonrpc:'2.0',id,method,params})});assert.equal(response.status,200);return response.json();}
  try {
   assert.equal((await rpc(1,'initialize',{protocolVersion:'2025-03-26',capabilities:{},clientInfo:{name:'fixture',version:'1'}})).result.serverInfo.name,'fixture');
-  const tools=(await rpc(2,'tools/list',{})).result.tools;assert.equal(tools.length,1);assert.equal(tools[0].annotations.readOnlyHint,true);
+  const tools=(await rpc(2,'tools/list',{})).result.tools;assert.equal(tools.length,2);assert.equal(tools[0].annotations.readOnlyHint,true);
   assert.equal((await rpc(3,'tools/call',{name:'fixture_read',arguments:{}})).result.content[0].text,'synthetic result');
+  assert.equal((await rpc(4,'tools/call',{name:'fixture_control',arguments:{}})).result.isError,true);assert.equal(controls,0);
+  headers.Authorization='Bearer '+await sign({scope:'paseo:read paseo:control'});
+  assert.equal((await rpc(5,'tools/call',{name:'fixture_control',arguments:{}})).result.content[0].text,'accepted');assert.equal(controls,1);
   assert.equal((await fetch(base,{method:'POST',headers:{...headers,Authorization:'Bearer '+await sign({sub:'google-oauth2|other'})},body:'{}'})).status,401);
  }finally{await new Promise(resolve=>listener.close(resolve));}
 });

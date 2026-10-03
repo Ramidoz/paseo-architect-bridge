@@ -1,8 +1,8 @@
 # Contributing
 
 Use Node 22.13+ and `npm ci`, then `npm test` and `npm run build`. The included workflow template exercises
-Linux/macOS on Node 22/24 when enabled. Do not introduce write/dispatch tools or bypass
-authentication. Test authorization failures as well as successful requests.
+Linux/macOS on Node 22/24 when enabled. Keep scope separation, idempotency and the explicit API allowlist. Do not bypass
+authentication or introduce implicit project orchestration. Test authorization failures as well as successful requests.
 
 Keep environment-specific identifiers, credentials, events and screenshots
 out of examples/tests. Fixtures must be synthetic. Changes to the pinned

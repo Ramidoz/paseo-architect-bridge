@@ -1,7 +1,7 @@
 import {readFile,stat} from 'node:fs/promises';
 import {authConfig} from '../server/auth.mjs';
 
-const allowed=new Set(['PASEO_URL','PASEO_PASSWORD','PASEO_DB','PASEO_POLL_MS','PASEO_OAUTH_ISSUER','PASEO_OAUTH_RESOURCE','PASEO_OAUTH_SUBJECT','PASEO_HTTP_PORT','CONTROL_PLANE_API_KEY','CONTROL_PLANE_TUNNEL_ID']);
+const allowed=new Set(['PASEO_ACCESS','PASEO_URL','PASEO_PASSWORD','PASEO_DB','PASEO_POLL_MS','PASEO_OAUTH_ISSUER','PASEO_OAUTH_RESOURCE','PASEO_OAUTH_SUBJECT','PASEO_HTTP_PORT','CONTROL_PLANE_API_KEY','CONTROL_PLANE_TUNNEL_ID']);
 
 // Deliberately does not evaluate shell expressions, interpolation or escapes.
 export function parseConfig(text) {

@@ -48,7 +48,7 @@ async function run(env,tunnel) {
 try {
  const [major,minor]=process.versions.node.split('.').map(Number);
  if(major<22||(major===22&&minor<13))throw Error('Node.js 22.13 or newer is required');
- if(!command||['help','--help','-h'].includes(command))console.log(`Paseo architect bridge (Linux and macOS)\n\nrun      --config /private/bridge.env --tunnel-bin /path/tunnel-client\ninstall  --config /private/bridge.env --tunnel-bin /path/tunnel-client [--start] [--dry-run]\nprobe    --config /private/bridge.env\n\nInstall creates a user service. run requires the bundled server (npm run build).\nConfiguration is never interpreted as shell code. No project write tools exist.`);
+ if(!command||['help','--help','-h'].includes(command))console.log(`Paseo API bridge (Linux and macOS)\n\nrun      --config /private/bridge.env --tunnel-bin /path/tunnel-client\ninstall  --config /private/bridge.env --tunnel-bin /path/tunnel-client [--start] [--dry-run]\nprobe    --config /private/bridge.env\n\nInstall creates a user service. run requires the bundled server (npm run build).\nConfiguration is never interpreted as shell code. Read access is the default; control and admin require explicit configuration and OAuth scopes.`);
  else {
   if(!['run','install','probe'].includes(command))throw Error('Unknown command; use --help');
   const config=resolve(option('--config',join(process.env.HOME,'.config/paseo-architect/bridge.env')));

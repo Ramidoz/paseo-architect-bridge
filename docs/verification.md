@@ -34,3 +34,21 @@ Boot configuration is enabled; a full machine reboot was not performed while
 coding sessions were active. A second real Google identity was not used; wrong
 subject rejection is covered by cryptographic authorization tests. GitHub CI
 is supplied as a template and was not activated by the publishing credential.
+
+
+## Version 0.4.0
+
+- All 13 tests passed on macOS and headless Linux, including scoped dispatch,
+  parameter validation, persisted request replay, conflicting keys, lost
+  acknowledgements and complete paged results.
+- The generated catalog exposes 174 JSON-callable operations from the pinned
+  Paseo 0.10.3 SDK. Thirty-five transport, subscription and non-JSON signatures
+  are explicitly excluded; these counts describe coverage, not 174 live tests.
+- Disposable Linux fixtures exercised provider inspection, agent creation,
+  duplicate-key replay without a second agent, sending a task, waiting for its
+  completion and reading its timeline, file reading/creation, terminal creation,
+  capture/stop and agent archive/deletion. Existing user sessions were untouched.
+- Broadly destructive administration operations were not invoked just to test
+  their availability. Authorization tests verify scope boundaries separately.
+- The reusable skill contains tool mechanics; project architecture and
+  orchestration policy remain outside the plugin.

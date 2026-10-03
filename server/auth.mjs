@@ -8,7 +8,9 @@ export function authConfig(env=process.env) {
  if(r.protocol!=='https:'||r.username||r.password||r.hash)throw Error('OAuth resource must be an HTTPS resource identifier.');
  const port=Number(env.PASEO_HTTP_PORT||18767);
  if(!Number.isInteger(port)||port<1||port>65535)throw Error('Invalid local HTTP port');
- return {issuer,resource,subject,port,scope:'paseo:read'};
+ const access=(env.PASEO_ACCESS||'read').split(',');
+ if(!access.includes('read')||access.some(x=>!['read','control','admin'].includes(x)))throw Error('PASEO_ACCESS must contain read, optionally control and admin');
+ return {issuer,resource,subject,port,scope:'paseo:read',access:[...new Set(access)]};
 }
 
 export function tokenVerifier(config, keys=createRemoteJWKSet(new URL('.well-known/jwks.json',config.issuer))) {
@@ -22,5 +24,5 @@ export function tokenVerifier(config, keys=createRemoteJWKSet(new URL('.well-kno
 }
 
 export function protectedMetadata(config) {
- return {resource:config.resource,authorization_servers:[config.issuer],scopes_supported:[config.scope],bearer_methods_supported:['header'],resource_name:'Paseo read-only'};
+ return {resource:config.resource,authorization_servers:[config.issuer],scopes_supported:(config.access||['read']).map(s=>`paseo:${s}`),bearer_methods_supported:['header'],resource_name:'Paseo'};
 }

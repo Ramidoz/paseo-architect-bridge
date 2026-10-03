@@ -1,13 +1,14 @@
-# Paseo Architect Bridge
+# Paseo API Bridge
 
-Let ChatGPT read what Claude Code, Codex and other Paseo agents are doing, then
-help you reason about architecture and the next task. Runs on **Linux or macOS**.
+Expose Paseo features to ChatGPT and other MCP clients. Runs on **Linux or macOS**.
 An independent integration for [Paseo](https://github.com/getpaseo/paseo), not a
 replacement daemon or an official Paseo/OpenAI product.
 
-The MCP interface is **read-only**: no command execution, agent dispatch,
-permission approval or file editing. Each person brings their own daemon,
-tunnel and OAuth identity. Open-source code does not share anyone's projects.
+The installation default remains **read-only**. Owners can opt into separate
+control and administration scopes. Each person brings their own daemon, tunnel
+and OAuth identity. Open-source code does not share anyone's projects.
+Project instructions own architecture, orchestration and cross-chat context;
+this plugin supplies raw operations, schemas and results.
 
 ```text
 ChatGPT → OpenAI outbound tunnel → OAuth-protected bridge → local Paseo daemon
@@ -25,11 +26,59 @@ using a local daemon or a private SSH forward to a remote daemon.
 - “What changed in this project since the last update?”
 - “Review the changes, explain architectural impact, and suggest the next task.”
 
-Five tools: `paseo_status`, `paseo_agents`, `paseo_updates`, `paseo_context`,
-`paseo_diff`. Updates include provider, project/repository, session/command,
+The original five evidence tools remain: `paseo_status`, `paseo_agents`,
+`paseo_updates`, `paseo_context`, `paseo_diff`. Updates include provider,
+project/repository, session/command,
 outcome, file status, bounded diffs or statistics, reported tests/errors and
-timestamps where the provider supplies them. The included architect skill
-distinguishes evidence from inference and keeps a decision ledger in chat.
+timestamps where the provider supplies them. The included technical skill explains tool use; it does not assign an architect
+role or maintain project policy.
+
+## Raw API tools
+
+`paseo_api` discovers 174 allowlisted JSON-callable SDK operations and gives each
+operation's named parameters and schemas. Call `paseo_read_request`,
+`paseo_control_request` or `paseo_admin_request` with those parameters.
+`paseo_result` retrieves saved request results and bounded pages of large output.
+See [API coverage](docs/api-coverage.md) for every mapped operation and exclusion.
+
+Scopes:
+
+- `paseo:read`: inspection, timelines, providers, workspaces, terminal captures
+  and repository/file reads.
+- `paseo:control`: sessions/tasks/permissions, terminals, file/Git changes,
+  workspaces, scripts and schedules. These can execute real code and alter work.
+- `paseo:admin`: daemon configuration, plugins/skills, hub/pairing access,
+  diagnostics, restart, shutdown and updates. These can expose sensitive
+  configuration or affect daemon security and availability.
+
+To enable additional groups, set `PASEO_ACCESS=read,control,admin` in private
+configuration **and** add matching OAuth permissions to the API/client. Read
+tokens never authorize a control/admin call. Local stdio honors the configured
+access groups without OAuth; its host is trusted.
+
+Every mutation requires an `idempotencyKey`. Replaying a key with identical
+parameters returns its recorded state without execution; different parameters
+are rejected. Pending/indeterminate results must be inspected, not blindly
+reissued with a new key. These records persist across process restarts.
+An RPC acknowledgement is not agent task completion. Read the session/timeline
+or terminal afterwards. All arguments/results may contain private information
+and remain in the owner-only database; no retention is automatic.
+
+Example after inspecting the createAgent schema:
+
+```json
+{
+  "operation": "createAgent",
+  "parameters": {"options": {"provider": "codex", "cwd": "/your/project", "title": "Your task"}},
+  "idempotencyKey": "your-unique-create-request-001"
+}
+```
+
+Native persistent callback/subscription transports are documented as exclusions.
+Audio/browser-related JSON operations do not create a native audio/browser UI.
+The daemon/provider may report unsupported capabilities; the bridge returns
+the actual outcome. This release maps APIs, not a universal verified guarantee
+for every operation.
 
 ## Install
 
@@ -104,7 +153,7 @@ installing it; omit `--start` to install without starting now.
 Use `mcp.json` / `.mcp.json`, or launch `node server/dist/bridge.mjs` as a stdio
 MCP server in your trusted desktop host. Set `PASEO_URL` as needed. Stdio does
 not require OAuth; never put an unauthenticated web proxy in front of it.
-Plugin hosts can load `plugin.json` and `skills/architect/SKILL.md`.
+Plugin hosts can load `plugin.json` and `skills/paseo-tools/SKILL.md`.
 
 ## Limits and privacy
 
