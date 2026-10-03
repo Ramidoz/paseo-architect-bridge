@@ -1,0 +1,21 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "paseo",
+  "version": "0.3.0",
+  "description": "Read-only architectural context and project updates from an existing Paseo daemon.",
+  "author": {
+    "name": "Paseo integration"
+  },
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "Paseo",
+        "shortDescription": "Remote agent project updates",
+        "longDescription": "Read-only Claude Code, Codex and other Paseo provider updates, repository changes and architectural evidence. Supports local MCP and an owner-authenticated bridge on Linux or macOS.",
+        "developerName": "Paseo integration",
+        "category": "Productivity",
+        "defaultPrompt": "Review my Paseo project updates and maintain architectural context."
+      }
+    }
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "name": "paseo-architect-bridge",
+  "version": "0.3.0",
+  "description": "Read-only architectural context from Paseo for ChatGPT and MCP, on Linux and macOS.",
+  "main": "server/bridge.mjs",
+  "scripts": {
+    "build": "node build.mjs && node scripts/notices.mjs",
+    "test": "node --test server/*.test.mjs cli/*.test.mjs",
+    "probe": "node server/dist/bridge.mjs --probe",
+    "prepack": "npm run build",
+    "tunnel": "node scripts/download-tunnel.mjs"
+  },
+  "keywords": [
+    "paseo",
+    "mcp",
+    "chatgpt",
+    "claude-code",
+    "codex"
+  ],
+  "author": "Ramidoz",
+  "license": "MIT",
+  "type": "module",
+  "dependencies": {
+    "@getpaseo/client": "0.10.3",
+    "@modelcontextprotocol/sdk": "1.26.0",
+    "jose": "6.2.12"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.12"
+  },
+  "engines": {
+    "node": ">=22.13"
+  },
+  "bin": {
+    "paseo-bridge": "cli/index.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Ramidoz/paseo-architect-bridge.git"
+  },
+  "homepage": "https://github.com/Ramidoz/paseo-architect-bridge",
+  "files": [
+    "server/",
+    "cli/",
+    "scripts/",
+    "skills/",
+    "docs/",
+    "licenses/",
+    "bridge.env.example",
+    "plugin.json",
+    "mcp.json",
+    ".mcp.json",
+    "build.mjs",
+    "README.md",
+    "SECURITY.md",
+    "CONTRIBUTING.md",
+    "LICENSE",
+    "THIRD_PARTY_NOTICES.txt"
+  ]
+}

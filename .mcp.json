@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "paseo": {
+      "command": "node",
+      "args": [
+        "./server/dist/bridge.mjs"
+      ],
+      "cwd": ".",
+      "startup_timeout_sec": 15,
+      "tool_timeout_sec": 180,
+      "env_vars": [
+        "PASEO_URL",
+        "PASEO_PASSWORD",
+        "PASEO_DB",
+        "PASEO_POLL_MS"
+      ]
+    }
+  }
+}

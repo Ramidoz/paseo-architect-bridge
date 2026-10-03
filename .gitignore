@@ -1,0 +1,11 @@
+node_modules/
+server/dist/
+*.tgz
+*.zip
+*.sqlite*
+*.log
+.env*
+*.env
+!bridge.env.example
+.DS_Store
+coverage/
