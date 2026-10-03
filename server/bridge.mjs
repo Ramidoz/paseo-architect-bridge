@@ -12,6 +12,7 @@ import {normalize,repoEvent,clean,hash} from './core.mjs';
 import {startHttp} from './http.mjs';
 import {authConfig} from './auth.mjs';
 import {createApi,catalog} from './api.mjs';
+import {scopeChallenge} from './oauth-tools.mjs';
 // Validate OAuth configuration before opening storage or remote connections.
 const httpConfig=process.argv.includes('--http')?authConfig():null;
 const dbPath=process.env.PASEO_DB || join(homedir(),'.local/share/paseo-architect/events.sqlite');
@@ -61,11 +62,11 @@ async function collect(){
 const enabled=httpConfig?.access||(process.env.PASEO_ACCESS||'read').split(',');
 const api=createApi({db,open,enabled});
 function makeServer({scopes=new Set(enabled.map(s=>`paseo:${s}`))}={}){
-const server=new McpServer({name:'paseo',version:'0.4.0'});
+const server=new McpServer({name:'paseo',version:'0.4.1'});
 server.registerTool('paseo_api',{annotations:{readOnlyHint:true},description:'Discover pinned Paseo API operations, required scopes and named parameter schemas. No project orchestration policy.',inputSchema:{operation:z.string().optional()}},async({operation})=>json(api.describe(operation)));
 for(const scope of ['read','control','admin'])if(enabled.includes(scope)) {
  const names=catalog.operations.filter(o=>o.scope===scope).map(o=>o.name);
- server.registerTool(`paseo_${scope}_request`,{annotations:{readOnlyHint:scope==='read',destructiveHint:scope!=='read',openWorldHint:scope!=='read'},description:`Call a ${scope} Paseo API operation. First inspect paseo_api(operation) for named parameter schemas. Mutations require idempotencyKey; returned does not mean agent work finished. Errors after dispatch can be indeterminate; inspect instead of blindly retrying.`,inputSchema:{operation:z.enum(names),parameters:z.record(z.string(),z.unknown()).default({}),idempotencyKey:z.string().optional()}},async(input)=>json(await api.call(input,scopes,scope)));
+ server.registerTool(`paseo_${scope}_request`,{annotations:{readOnlyHint:scope==='read',destructiveHint:scope!=='read',openWorldHint:scope!=='read'},description:`Call a ${scope} Paseo API operation. First inspect paseo_api(operation) for named parameter schemas. Mutations require idempotencyKey; returned does not mean agent work finished. Errors after dispatch can be indeterminate; inspect instead of blindly retrying.`,inputSchema:{operation:z.enum(names),parameters:z.record(z.string(),z.unknown()).default({}),idempotencyKey:z.string().optional()}},async(input)=>{const challenge=httpConfig&&scopeChallenge(scope,scopes);return challenge||json(await api.call(input,scopes,scope));});
 }
 server.registerTool('paseo_result',{annotations:{readOnlyHint:true},description:'Read a persisted request result or oversized serialized result in bounded pages. Requires the same scope as the original request.',inputSchema:{requestKey:z.string(),offset:z.number().int().nonnegative().default(0),limit:z.number().int().min(100).max(32000).default(32000)}},async(input)=>json(api.result(input,scopes)));
 server.registerTool('paseo_status',{annotations:{readOnlyHint:true,destructiveHint:false,openWorldHint:false},description:'Check remote Paseo connectivity and ingestion health; refresh read-only evidence.',inputSchema:{}},async()=>json(await sync()));

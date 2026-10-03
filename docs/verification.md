@@ -52,3 +52,10 @@ is supplied as a template and was not activated by the publishing credential.
   their availability. Authorization tests verify scope boundaries separately.
 - The reusable skill contains tool mechanics; project architecture and
   orchestration policy remain outside the plugin.
+
+## Version 0.4.1
+
+OAuth tool discovery now declares per-tool read/control/admin scopes and missing
+control scopes return a structured MCP OAuth challenge before any dispatch.
+The authenticated HTTP test verifies the discovery declaration, challenge and
+no-dispatch boundary, then successful dispatch with the matching scope.

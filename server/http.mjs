@@ -1,6 +1,7 @@
 import {createServer} from 'node:http';
 import {StreamableHTTPServerTransport} from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import {authConfig,tokenVerifier,protectedMetadata} from './auth.mjs';
+import {decorateOAuthTools} from './oauth-tools.mjs';
 
 export function startHttp(makeServer,config=authConfig(),verify=tokenVerifier(config)) {
  const listener=createServer(async(req,res)=>{
@@ -23,7 +24,7 @@ export function startHttp(makeServer,config=authConfig(),verify=tokenVerifier(co
   try {
    for await(const chunk of req){body+=chunk;if(Buffer.byteLength(body)>1048576){res.writeHead(413).end();return;}}
    const parsed=JSON.parse(body);
-   const server=makeServer({scopes:new Set(identity.scope.split(' '))}),transport=new StreamableHTTPServerTransport({sessionIdGenerator:undefined,enableJsonResponse:true});
+   const server=makeServer({scopes:new Set(identity.scope.split(' '))}),transport=decorateOAuthTools(new StreamableHTTPServerTransport({sessionIdGenerator:undefined,enableJsonResponse:true}));
    res.on('close',()=>void server.close());
    await server.connect(transport);await transport.handleRequest(req,res,parsed);
   }catch {

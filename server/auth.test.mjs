@@ -4,6 +4,7 @@ import {generateKeyPair,SignJWT,exportJWK,createLocalJWKSet} from 'jose';
 import {authConfig,tokenVerifier} from './auth.mjs';
 import {startHttp} from './http.mjs';
 import {McpServer} from '@modelcontextprotocol/sdk/server/mcp.js';
+import {scopeChallenge} from './oauth-tools.mjs';
 const config=authConfig({PASEO_OAUTH_ISSUER:'https://tenant.example/',PASEO_OAUTH_RESOURCE:'https://api.example/mcp',PASEO_OAUTH_SUBJECT:'google-oauth2|owner',PASEO_HTTP_PORT:'18768'});
 const pair=await generateKeyPair('RS256');
 const key=await exportJWK(pair.publicKey);key.kid='test';key.alg='RS256';
@@ -36,7 +37,7 @@ test('authenticated stateless MCP initializes, discovers and calls tools; a diff
  const listener=startHttp(({scopes})=>{
   const server=new McpServer({name:'fixture',version:'1.0.0'});
   server.registerTool('fixture_read',{description:'Synthetic read',annotations:{readOnlyHint:true},inputSchema:{}},async()=>({content:[{type:'text',text:'synthetic result'}]}));
-  server.registerTool('fixture_control',{description:'Synthetic control',annotations:{readOnlyHint:false},inputSchema:{}},async()=>{if(!scopes.has('paseo:control'))throw Error('Control scope required');controls++;return {content:[{type:'text',text:'accepted'}]};});
+  server.registerTool('paseo_control_request',{description:'Synthetic control',annotations:{readOnlyHint:false},inputSchema:{}},async()=>{const challenge=scopeChallenge('control',scopes);if(challenge)return challenge;controls++;return {content:[{type:'text',text:'accepted'}]};});
   return server;
  },{...config,port:0},verify);
  await new Promise(resolve=>listener.once('listening',resolve));
@@ -47,9 +48,11 @@ test('authenticated stateless MCP initializes, discovers and calls tools; a diff
   assert.equal((await rpc(1,'initialize',{protocolVersion:'2025-03-26',capabilities:{},clientInfo:{name:'fixture',version:'1'}})).result.serverInfo.name,'fixture');
   const tools=(await rpc(2,'tools/list',{})).result.tools;assert.equal(tools.length,2);assert.equal(tools[0].annotations.readOnlyHint,true);
   assert.equal((await rpc(3,'tools/call',{name:'fixture_read',arguments:{}})).result.content[0].text,'synthetic result');
-  assert.equal((await rpc(4,'tools/call',{name:'fixture_control',arguments:{}})).result.isError,true);assert.equal(controls,0);
+  assert.equal((await rpc(4,'tools/call',{name:'paseo_control_request',arguments:{}})).result.isError,true);assert.equal(controls,0);
+  assert.deepEqual(tools.find(t=>t.name==='paseo_control_request').securitySchemes,[{type:'oauth2',scopes:['paseo:read','paseo:control']}]);
+  assert.match((await rpc(41,'tools/call',{name:'paseo_control_request',arguments:{}})).result._meta['mcp/www_authenticate'][0],/insufficient_scope/);
   headers.Authorization='Bearer '+await sign({scope:'paseo:read paseo:control'});
-  assert.equal((await rpc(5,'tools/call',{name:'fixture_control',arguments:{}})).result.content[0].text,'accepted');assert.equal(controls,1);
+  assert.equal((await rpc(5,'tools/call',{name:'paseo_control_request',arguments:{}})).result.content[0].text,'accepted');assert.equal(controls,1);
   assert.equal((await fetch(base,{method:'POST',headers:{...headers,Authorization:'Bearer '+await sign({sub:'google-oauth2|other'})},body:'{}'})).status,401);
  }finally{await new Promise(resolve=>listener.close(resolve));}
 });

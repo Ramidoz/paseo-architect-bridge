@@ -1,6 +1,6 @@
 {
   "name": "paseo-architect-bridge",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Raw Paseo API tools for ChatGPT and MCP on Linux and macOS.",
   "main": "server/bridge.mjs",
   "scripts": {
