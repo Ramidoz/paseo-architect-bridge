@@ -25,6 +25,12 @@ test('actual MCP summary tools return retained evidence promptly while the daemo
  const transport=new StdioClientTransport({command:process.execPath,args:[fileURLToPath(new URL(entryPoint,import.meta.url))],env:{...process.env,PASEO_DB:dbPath,PASEO_URL:url,PASEO_ACCESS:'read',PASEO_POLL_MS:'30000'},stderr:'pipe'});
  try {
   await client.connect(transport);
+  const {tools}=await client.listTools();
+  for(const name of ['paseo_status','paseo_agents','paseo_updates','paseo_context']) {
+   assert.match(tools.find(tool=>tool.name===name).description,/immediately/);
+  }
+  assert.match(tools.find(tool=>tool.name==='paseo_diff').description,/on demand/);
+  assert.match(tools.find(tool=>tool.name==='paseo_context').description,/filesStale/);
   const timings={};
   for(const [name,args] of [['paseo_status',{}],['paseo_agents',{}],['paseo_updates',{repo:'/fixture'}],['paseo_context',{repo:'/fixture'}]]) {
    const start=performance.now();const result=await client.callTool({name,arguments:args},undefined,{timeout:1000});timings[name]=Math.round(performance.now()-start);
