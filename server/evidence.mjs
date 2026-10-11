@@ -58,7 +58,7 @@ export function createEvidence({db,open,disconnect,url,pollMs=30000,requestMs=50
    health={...health,connected:true,daemon:checkout.getLastServerInfoMessage()?.version,lastConnectionCheck:iso()};
    const next=[],cursors=new Set();let cursor;
    do {
-    const page=await request(()=>client.agents.list({limit:100,...(cursor?{cursor}:{})}),'Agent catalog');
+    const page=await request(()=>client.agents.list({page:{limit:100,...(cursor?{cursor}:{})}}),'Agent catalog');
     for(const {agent,project} of page.entries)next.push({agent:{id:agent.id,provider:agent.provider,cwd:agent.cwd,title:clean(agent.title),status:agent.status,runtimeInfo:{sessionId:agent.runtimeInfo?.sessionId},requiresAttention:agent.requiresAttention},project:{projectName:project?.projectName},fingerprint:hash({agent,project})});
     cursor=page.pageInfo.hasMore?page.pageInfo.nextCursor:null;
     if(page.pageInfo.hasMore&&(!cursor||cursors.has(JSON.stringify(cursor))))throw Error('Agent catalog pagination incomplete');

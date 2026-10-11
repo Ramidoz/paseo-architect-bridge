@@ -18,6 +18,24 @@ function adapter(entries=[],refetch=async()=>page()) {
 }
 const session=id=>({agent:{id,provider:'claude',cwd:'/repo',status:'idle',runtimeInfo:{sessionId:id}},project:{projectName:'Project'}});
 
+test('catalog pagination uses the SDK page envelope and retains every page',async()=>{
+ const f=fixture();const a=adapter();const calls=[];
+ a.client.agents.list=async options=>{
+  calls.push(options);
+  assert.equal(options.page.limit,100);
+  return options.page.cursor==='second'
+   ?{entries:[session('b')],pageInfo:{hasMore:false,nextCursor:null}}
+   :{entries:[session('a')],pageInfo:{hasMore:true,nextCursor:'second'}};
+ };
+ const evidence=f.create({open:async()=>a,disconnect:async()=>{}});
+ try {
+  await evidence.sync();
+  assert.deepEqual(calls,[{page:{limit:100}},{page:{limit:100,cursor:'second'}}]);
+  assert.deepEqual(evidence.agents().agents.map(agent=>agent.id),['a','b']);
+  assert.deepEqual(evidence.status().errors,[]);
+ }finally{await evidence.stop();f.db.close();}
+});
+
 test('cached reads and raw API stay responsive while ingestion is hung; late results cannot advance cursors',async()=>{
  const f=fixture({requestMs:30,budgetMs:100});let finish,disconnects=0;
  const a=adapter([session('a')],()=>new Promise(resolve=>{finish=resolve;}));
