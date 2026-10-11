@@ -71,3 +71,15 @@ source or Node executable, reinstall the service. The bridge default database
 is `~/.local/share/paseo-architect/events.sqlite` unless `PASEO_DB` is set.
 No automatic retention, cost controls or project allowlist beyond the daemon's
 own access scope is provided. Do not upload logs without reviewing them.
+
+Version 0.4.2 separates cached summary reads from background ingestion. Keep the
+existing database and configuration when upgrading; events and timeline cursors
+are reused. The complete agent catalog and ingestion health are also retained
+across restarts. A restored connection flag is not treated as a live health check.
+
+After restarting, call `paseo_status`, `paseo_agents`, `paseo_updates` and
+`paseo_context`. They should respond while collection is in progress. Check their
+freshness and observation timestamps before treating cached evidence as current.
+Call the raw `ping` API to independently verify the daemon connection. The raw
+API and collector use separate sockets; a background timeout does not close a
+control request's connection or alter mutation idempotency records.

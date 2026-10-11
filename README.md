@@ -33,6 +33,27 @@ outcome, file status, bounded diffs or statistics, reported tests/errors and
 timestamps where the provider supplies them. The included technical skill explains tool use; it does not assign an architect
 role or maintain project policy.
 
+Summary tools read the private cache immediately; they never start or wait for
+a catalog, timeline or repository synchronization. Responses report `stale`,
+`cacheAgeMs`, `lastCatalogSync`, `lastSync` and `syncInProgress`. At startup or
+while the daemon is unavailable, retained events remain readable. Use the raw
+`ping` or `fetchAgents` API for a live connection check or live agent lookup.
+
+Background refreshes run once at a time with a 15-second work budget and
+5-second request deadlines. Each pass revisits at most 25 due session timelines
+and five repository statuses, rotating through larger catalogs. Changed/running
+sessions take priority; unchanged idle sessions are rechecked every five minutes.
+`pendingAgents` includes sessions due for another check, including running ones.
+Timeline catch-up continues from persisted cursors over later passes.
+
+The pinned SDK's repository status does not include file paths. Background
+checks therefore preserve the last full file snapshot, mark `filesStale`, and
+report `statusObservedAt` and `filesObservedAt` separately. `paseo_diff` fetches
+a full remote repository diff on demand, returns the requested file with bounded
+text, and refreshes that snapshot. Provider edit/write events still report the
+CLI and changed path. This avoids downloading every large repository patch on
+every polling tick.
+
 ## Raw API tools
 
 `paseo_api` discovers 174 allowlisted JSON-callable SDK operations and gives each
@@ -166,7 +187,8 @@ Plugin hosts can load `plugin.json` and `skills/paseo-tools/SKILL.md`.
   import. Very old lifecycle revisions can be missed.
 - File snapshots cover uncommitted diffs; ignored files and commit-only
   transitions are not fully captured. Tests are agent-reported, not rerun.
-- Polling defaults to 30 seconds. Tools pull updates; no automatic unsolicited
+- Polling defaults to 30 seconds; large initial catalogs and timeline backlogs
+  require multiple bounded passes. Tools read saved updates; no automatic unsolicited
   chat notifications or scheduled architect agent is included.
 - SQLite uses owner-only file permissions and persists across restarts. Data
   is not automatically pruned. Secret redaction is best effort; review sensitive
